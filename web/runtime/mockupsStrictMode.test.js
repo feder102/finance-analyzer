@@ -285,8 +285,8 @@ test("integrated overview shell uses decision-order copy without placeholder hea
   assert.match(source, /id="fo-overview-q8-title"/);
   assert.match(source, /id="fo-overview-q8-meta"/);
   assert.match(source, /id="fo-overview-q8-host"/);
-  assert.match(source, /mockups_lab\/vendor\/highcharts\.js/);
-  assert.match(source, /mockups_lab\/vendor\/highcharts-dark-unica\.js/);
+  assert.match(source, /https:\/\/code\.highcharts\.com\/12\.5\.0\/highcharts\.js/);
+  assert.match(source, /https:\/\/code\.highcharts\.com\/12\.5\.0\/themes\/dark-unica\.js/);
   assert.match(source, /Statement composition \(ARS\)/);
   assert.match(source, /Top categories within card movements \(ARS\)/);
   assert.match(source, /What changed vs last month\?/);
@@ -405,7 +405,7 @@ test("finance-overview renders payment-semantics reconciliation and explicit tot
   assert.match(source, /document\.getElementById\("fo-overview-q8-host"\)/);
   assert.match(source, /renderOverviewDebtDirectionHighchartsHost\(host,\s*buildOverviewDebtDirectionChartConfig\(model\)\)/);
   assert.match(source, /function renderHighchartsOnContainer/);
-  assert.match(source, /Local Highcharts asset is missing\. Expected \.\/vendor\/highcharts\.js\./);
+  assert.match(source, /Highcharts runtime is missing\. Expected the pinned official CDN asset to load first\./);
   assert.match(source, /renderDualHighchartsHost\(host,\s*configs\)/);
   assert.match(source, /closeDateLabel/);
   assert.match(source, /Close date:/);

@@ -38,6 +38,14 @@ Then open:
 http://localhost:8080
 ```
 
+### Highcharts runtime
+
+The public web app now loads Highcharts from the official pinned CDN instead of a vendored local snapshot:
+1. `https://code.highcharts.com/12.5.0/highcharts.js`
+2. `https://code.highcharts.com/12.5.0/themes/dark-unica.js`
+
+That means browser-based runs need network access to `code.highcharts.com`.
+
 ### OSS sensitive artifact guard
 
 From `web/`:

@@ -9104,7 +9104,7 @@
 
   function renderHighchartsOnContainer(container, config) {
     if (!global.Highcharts || typeof global.Highcharts.chart !== "function") {
-      throw new Error("Local Highcharts asset is missing. Expected ./vendor/highcharts.js.");
+      throw new Error("Highcharts runtime is missing. Expected the pinned official CDN asset to load first.");
     }
     if (container._foHighchartsInstance && typeof container._foHighchartsInstance.destroy === "function") {
       container._foHighchartsInstance.destroy();

@@ -16,20 +16,19 @@ The first public-safe import is already in place:
 
 The remaining work is follow-up hardening and polish, not migration-critical cleanup.
 
-## Task 1: Resolve Third-Party Licensing For Vendored Assets
+## Task 1: Confirm Highcharts Usage Licensing Posture
 
-Goal: confirm the public repo can legally redistribute everything under `web/mockups_lab/vendor/`.
+Goal: confirm the public repo can legally use Highcharts in its current CDN-backed setup.
 
 Subtasks:
-1. review the licensing and redistribution terms for `web/mockups_lab/vendor/highcharts.js`,
-2. review the licensing and redistribution terms for `web/mockups_lab/vendor/highcharts-dark-unica.js`,
-3. decide whether the assets can stay vendored in the public repo,
-4. if not, replace them with an allowed alternative or a documented install/build step,
-5. add the final licensing note to the public README or a dedicated public docs page.
+1. confirm whether the intended public-site usage is covered by your Highcharts license posture,
+2. document the chosen posture for future maintainers,
+3. decide whether the CDN-backed approach is sufficient long-term,
+4. if not, replace Highcharts with an allowed alternative.
 
 Done when:
-1. the redistribution posture is explicit,
-2. there is no ambiguity about whether these vendor files belong in the public repo.
+1. the usage posture is explicit,
+2. there is no ambiguity about whether Highcharts can remain in the public experience.
 
 ## Task 2: Clean The Public Web / Private Overlay Contract
 
