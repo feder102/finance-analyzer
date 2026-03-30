@@ -39,6 +39,7 @@ copy_file "$web_root/csvCombine.js" "$publish_root/csvCombine.js"
 copy_file "$web_root/format.js" "$publish_root/format.js"
 copy_file "$web_root/mappingsCsvParse.js" "$publish_root/mappingsCsvParse.js"
 copy_file "$web_root/tableRenderer.js" "$publish_root/tableRenderer.js"
+copy_file "$web_root/node_modules/idb/build/index.js" "$publish_root/node_modules/idb/build/index.js"
 
 copy_runtime_dir "$web_root/runtime" "$publish_root/runtime"
 copy_runtime_dir "$web_root/storage" "$publish_root/storage"
