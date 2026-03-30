@@ -98,10 +98,6 @@ jobs:
         working-directory: web
         run: npm ci
 
-      - name: Install Playwright Chromium
-        working-directory: web
-        run: npx playwright install --with-deps chromium
-
       - name: Wait for deployed Pages URL
         env:
           PAGE_URL: ${{ needs.deploy.outputs.page_url }}
@@ -120,5 +116,4 @@ jobs:
         working-directory: web
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.deploy.outputs.page_url }}
-          PLAYWRIGHT_SKIP_WEBSERVER: "1"
-        run: npm run test:smoke:deployed
+        run: npm run verify:pages:light

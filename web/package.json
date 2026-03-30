@@ -6,6 +6,7 @@
     "test:unit": "node --test format.test.js tableRenderer.test.js csvCombine.test.js mappingsCsvParse.test.js storage/db.test.js storage/utils.test.js storage/workspace.test.js runtime/categorySegments.test.js runtime/categorySegmentBehavior.test.js runtime/categorySegmentCoverage.test.js runtime/demoDatasetContract.test.js runtime/wasmRuntime.test.js runtime/computeTables.test.js runtime/mockupsRuntime.test.js runtime/mockupsStrictMode.test.js runtime/decoupling.test.js runtime/strictProjectionContract.test.js runtime/uxAuditContract.test.js",
     "test:smoke": "playwright test e2e/smoke.spec.js",
     "test:smoke:deployed": "playwright test e2e/deployed-smoke.spec.js",
+    "verify:pages:light": "node scripts/verify-pages-light.mjs",
     "audit:ux": "playwright test e2e/ux-audit.spec.js",
     "audit:ux:parts": "playwright test e2e/ux-parts-analysis.spec.js",
     "guard:oss-sensitive": "node scripts/guard-oss-sensitive.mjs --mode=delta",
