@@ -98,8 +98,9 @@ func extractAllRows(r *pdf.Reader) ([]*pdf.Row, error) {
 	return allRows, nil
 }
 
-// soloComprobanteRegex matches a line that is only a 6-digit comprobante number
-var soloComprobanteRegex = regexp.MustCompile(`^\d{6}$`)
+// soloComprobanteRegex matches a line that is only a 6-digit comprobante number,
+// optionally followed by an amount (e.g. "596722" or "596722 3,94")
+var soloComprobanteRegex = regexp.MustCompile(`^\d{6}(?:\s+[\d.,]+)?$`)
 
 // rowsToTextLines converts PDF rows to text lines by joining all text content in each row.
 // Also merges lines where a comprobante (6-digit number) appears alone on the next line.
