@@ -54,7 +54,7 @@ func TestReadArgs_InvalidCases(t *testing.T) {
 		{
 			name:      "Invalid bank type",
 			args:      []string{"--bank", "invalid-bank", "file1.pdf"},
-			baseError: "error validating arguments: error processing --bank: bank type invalid-bank is not one of the supported banks: [santander visa-prisma]",
+			baseError: "error validating arguments: error processing --bank: bank type invalid-bank is not one of the supported banks: [santander visa-prisma galicia]",
 		},
 		{
 			name:      "No PDFs provided",
