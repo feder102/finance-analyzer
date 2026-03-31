@@ -23,9 +23,12 @@ Install it once with Go:
 
 ```bash
 go install github.com/Alechan/finance-analyzer/pkg/cmd/finpdf2csv@latest
+
+# add it if not already added
+export PATH="$(go env GOPATH)/bin:$PATH"
 ```
 
-If `finpdf2csv` is not on your `PATH`, run it from your Go bin directory instead. On many setups that is `$(go env GOPATH)/bin`.
+If you want that `PATH` change to persist, add the same `export` line to your shell profile, for example `~/.zshrc`. If `finpdf2csv` is still not on your `PATH`, run it from your Go bin directory instead. On many setups that is `$(go env GOPATH)/bin`.
 
 ## How do I extract a PDF?
 
