@@ -757,21 +757,28 @@ test("mockups_lab settings toggles lifecycle busy-state and disables controls du
   await fs.writeFile(largeCsvPathB, largeCsvContent, "utf8");
   const importPromise = page.locator("#fo-import-csv-input").setInputFiles([largeCsvPathA, largeCsvPathB]);
   await expect
-    .poll(async () => page.evaluate(() => document.body.dataset.foLifecycleBusy || ""), {
-      message: "lifecycle busy-state should flip to true while import+compute is running",
-    })
-    .toBe("true");
-  await expect
-    .poll(async () => computeBtn.isDisabled(), {
-      message: "compute control should become disabled while lifecycle busy-state is true",
-    })
-    .toBe(true);
+    .poll(
+      async () =>
+        page.evaluate(() => ({
+          lifecycleBusy: document.body.dataset.foLifecycleBusy || "",
+          computeDisabled: Boolean(document.getElementById("fo-settings-run-compute-btn")?.disabled),
+        })),
+      {
+        message: "lifecycle busy-state and compute control should flip together while import+compute is running",
+      }
+    )
+    .toEqual({
+      lifecycleBusy: "true",
+      computeDisabled: true,
+    });
 
   await importPromise;
-  await expect(page.locator("#fo-settings-status")).toContainText("Imported 2 CSV file(s)");
   await expect
-    .poll(async () => page.evaluate(() => document.body.dataset.foLifecycleBusy || ""))
+    .poll(async () => page.evaluate(() => document.body.dataset.foLifecycleBusy || ""), {
+      message: "lifecycle busy-state should settle back to false after the import finishes",
+    })
     .toBe("false");
+  await expect(page.locator("#fo-settings-status")).toContainText("Imported 2 CSV file(s)");
   await expect(computeBtn).toBeEnabled();
 });
 
