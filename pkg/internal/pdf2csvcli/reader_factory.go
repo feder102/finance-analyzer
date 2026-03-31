@@ -3,6 +3,7 @@ package pdf2csvcli
 import (
 	"fmt"
 
+	"github.com/Alechan/finance-analyzer/pkg/internal/extractor/galicia"
 	"github.com/Alechan/finance-analyzer/pkg/internal/extractor/santander"
 	"github.com/Alechan/finance-analyzer/pkg/internal/extractor/visaprisma"
 	"github.com/Alechan/finance-analyzer/pkg/internal/pdfcardsummaryio"
@@ -15,6 +16,8 @@ func ExtractorFactory(bankType BankType) (pdfcardsummaryio.Extractor, error) {
 		return santander.NewSantanderExtractorFromDefaultCfg(), nil
 	case VisaPrisma:
 		return visaprisma.NewVisaprismaExtractor(), nil
+	case Galicia:
+		return galicia.NewGaliciaExtractor(), nil
 	default:
 		return nil, fmt.Errorf("unsupported bank type: %s", bankType)
 	}

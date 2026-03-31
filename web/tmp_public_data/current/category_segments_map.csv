@@ -1,0 +1,20 @@
+category;segment
+Books;discretionary
+Cafe;discretionary
+Cell;essential
+Clothing;discretionary
+Entertainment;discretionary
+Fitness;discretionary
+Fuel;essential
+Home;essential
+Medical;essential
+Online retail;discretionary
+Previous total;essential
+Previous total payment;essential
+Snacks;discretionary
+Subscriptions;discretionary
+Supermarket;essential
+Take out;discretionary
+Travel;discretionary
+Unknown;discretionary
+Utilities;essential

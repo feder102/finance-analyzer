@@ -6,9 +6,11 @@ type BankType string
 var (
 	Santander  BankType = "santander"
 	VisaPrisma BankType = "visa-prisma"
+	Galicia    BankType = "galicia"
 
 	validBanks = []BankType{
 		Santander,
 		VisaPrisma,
+		Galicia,
 	}
 )
