@@ -98,9 +98,13 @@ func extractAllRows(r *pdf.Reader) ([]*pdf.Row, error) {
 	return allRows, nil
 }
 
-// rowsToTextLines converts PDF rows to text lines by joining all text content in each row
+// soloComprobanteRegex matches a line that is only a 6-digit comprobante number
+var soloComprobanteRegex = regexp.MustCompile(`^\d{6}$`)
+
+// rowsToTextLines converts PDF rows to text lines by joining all text content in each row.
+// Also merges lines where a comprobante (6-digit number) appears alone on the next line.
 func rowsToTextLines(rows []*pdf.Row) []string {
-	var lines []string
+	var raw []string
 	for _, row := range rows {
 		var textParts []string
 		for _, text := range row.Content {
@@ -111,7 +115,18 @@ func rowsToTextLines(rows []*pdf.Row) []string {
 		line := strings.Join(textParts, " ")
 		line = strings.TrimSpace(line)
 		if line != "" {
-			lines = append(lines, line)
+			raw = append(raw, line)
+		}
+	}
+
+	// Merge lines where the next line is a standalone comprobante
+	var lines []string
+	for i := 0; i < len(raw); i++ {
+		if i+1 < len(raw) && soloComprobanteRegex.MatchString(raw[i+1]) {
+			lines = append(lines, raw[i]+" "+raw[i+1])
+			i++ // skip next line
+		} else {
+			lines = append(lines, raw[i])
 		}
 	}
 	return lines
@@ -128,8 +143,8 @@ var (
 	// Table header
 	tableHeaderRegex = regexp.MustCompile(`FECHA\s+REFERENCIA\s+CUOTA\s+COMPROBANTE\s+PESOS`)
 
-	// Card movement start marker (has * or K flag)
-	cardMovStartRegex = regexp.MustCompile(`^(\d{2}-\d{2}-\d{2})\s+[*K]\s+`)
+	// Card movement start marker (has *, K, F, or E flag)
+	cardMovStartRegex = regexp.MustCompile(`^(\d{2}-\d{2}-\d{2})\s+[*KFE]\s+`)
 
 	// Card total line: "TARJETA 7837 Total Consumos de FE CASTIGLIONE PERE 40.239,92 0,00"
 	cardTotalRegex = regexp.MustCompile(`^TARJETA\s+(\d+)\s+Total Consumos de\s+(.+?)\s+([\d.,]+)\s+([\d.,]+)\s*$`)
@@ -140,20 +155,26 @@ var (
 	// Tax/charge row: date + description + optional $ + amount
 	taxRowRegex = regexp.MustCompile(`^(\d{2}-\d{2}-\d{2})\s+(.+?)\s+(?:P?\s*\$\s+)?(-?[\d.]+,\d{2})\s*$`)
 
-	// Total a pagar line
-	totalAPagarRegex = regexp.MustCompile(`TOTAL A PAGAR\s+([\d.,]+)\s+([\d.,]+)`)
+	// Total a pagar line (montos pueden estar en la misma línea o en la anterior)
+	totalAPagarRegex = regexp.MustCompile(`TOTAL A PAGAR`)
+
+	// Dos montos en una línea (usado para extraer totales de la línea previa a TOTAL A PAGAR)
+	twoAmountsRegex = regexp.MustCompile(`^([\d.,]+)\s+([\d.,]+)\s*$`)
 
 	// Installments pattern (XX/YY)
 	installmentsRegex = regexp.MustCompile(`\b(\d{2})/(\d{2})\b`)
 
-	// 6-digit comprobante
-	comprobanteRegex = regexp.MustCompile(`\b(\d{6})\b`)
+	// 6-digit comprobante: standalone number (not followed by comma = not part of an amount)
+	comprobanteRegex = regexp.MustCompile(`(?:^|\s)(\d{6})(?:\s|$)`)
 
 	// Detalle del consumo marker
 	detalleRegex = regexp.MustCompile(`DETALLE DEL CONSUMO`)
 
 	// Amount patterns (for extraction)
 	amountRegex = regexp.MustCompile(`(-?[\d.]+,\d{2}-?)`)
+
+	// Date line without flag (for card movements without *, K, F, E)
+	dateWithoutFlagRegex = regexp.MustCompile(`^(\d{2}-\d{2}-\d{2})\s+[^*KFE\d]`)
 )
 
 // parseGaliciaDocument parses the document sections sequentially
@@ -179,11 +200,19 @@ func parseGaliciaDocument(lines []string) (Document, error) {
 		}
 
 		// Check for TOTAL A PAGAR (end marker)
-		if m := totalAPagarRegex.FindStringSubmatch(line); m != nil {
-			arsTotal, _ := parseGaliciaAmount(m[1])
-			usdTotal, _ := parseGaliciaAmount(m[2])
-			doc.TotalARS = arsTotal
-			doc.TotalUSD = usdTotal
+		// The amounts may be on the same line OR on the previous line
+		if totalAPagarRegex.MatchString(line) {
+			// Try same line first
+			if m := twoAmountsRegex.FindStringSubmatch(line[len("TOTAL A PAGAR"):]); m != nil {
+				doc.TotalARS, _ = parseGaliciaAmount(m[1])
+				doc.TotalUSD, _ = parseGaliciaAmount(m[2])
+			} else if i > 0 {
+				// Try previous line
+				if m := twoAmountsRegex.FindStringSubmatch(lines[i-1]); m != nil {
+					doc.TotalARS, _ = parseGaliciaAmount(m[1])
+					doc.TotalUSD, _ = parseGaliciaAmount(m[2])
+				}
+			}
 			state = "DONE"
 			continue
 		}
@@ -217,14 +246,21 @@ func parseGaliciaDocument(lines []string) (Document, error) {
 		if state == "CONSOLIDADO" {
 			if m := consolidadoMovRegex.FindStringSubmatch(line); m != nil {
 				date, _ := parseGaliciaTransactionDate(m[1])
-				arsAmt, _ := parseGaliciaAmount(m[3])
-				usdAmt := decimal.Zero
+				detail := m[2]
+				var arsAmt, usdAmt decimal.Decimal
 				if m[4] != "" {
+					// Two amounts: first is ARS, second is USD
+					arsAmt, _ = parseGaliciaAmount(m[3])
 					usdAmt, _ = parseGaliciaAmount(m[4])
+				} else if strings.Contains(detail, "USD") {
+					// Single amount and detail mentions USD: it's a USD movement
+					usdAmt, _ = parseGaliciaAmount(m[3])
+				} else {
+					arsAmt, _ = parseGaliciaAmount(m[3])
 				}
 				doc.PastPaymentMovements = append(doc.PastPaymentMovements, PDFMovement{
 					OriginalDate: &date,
-					Detail:       m[2],
+					Detail:       detail,
 					AmountARS:    arsAmt,
 					AmountUSD:    usdAmt,
 				})
@@ -247,7 +283,7 @@ func parseGaliciaDocument(lines []string) (Document, error) {
 				continue
 			}
 
-			// Regular card movement (has * or K flag)?
+			// Regular card movement (has *, K, F or E flag)?
 			if cardMovStartRegex.MatchString(line) {
 				mov, err := parseCardMovement(line)
 				if err == nil && mov != nil {
@@ -259,7 +295,19 @@ func parseGaliciaDocument(lines []string) (Document, error) {
 				continue
 			}
 
-			// Tax/charge row (date but no * or K flag)?
+			// Card movement without flag but with a 6-digit comprobante? (e.g. CLAUDE.AI)
+			if dateWithoutFlagRegex.MatchString(line) && comprobanteRegex.MatchString(line) {
+				mov, err := parseCardMovementNoFlag(line)
+				if err == nil && mov != nil {
+					if currentCard == nil {
+						currentCard = &PDFCard{}
+					}
+					currentCard.Movements = append(currentCard.Movements, *mov)
+					continue
+				}
+			}
+
+			// Tax/charge row (date but no flag)?
 			if m := taxRowRegex.FindStringSubmatch(line); m != nil && !cardMovStartRegex.MatchString(line) {
 				date, _ := parseGaliciaTransactionDate(m[1])
 				amt, _ := parseGaliciaAmount(m[3])
@@ -281,8 +329,25 @@ func parseGaliciaDocument(lines []string) (Document, error) {
 	return doc, nil
 }
 
+// parseCardMovementNoFlag parses a card movement line without a flag character
+// Format: DD-MM-YY REFERENCE [XX/YY] COMPROBANTE [ARS] [USD]
+func parseCardMovementNoFlag(line string) (*PDFMovement, error) {
+	line = strings.TrimSpace(line)
+	if len(line) < 10 {
+		return nil, nil
+	}
+	dateStr := line[:8]
+	date, err := parseGaliciaTransactionDate(dateStr)
+	if err != nil {
+		return nil, nil
+	}
+	// No flag to skip - rest starts after date
+	rest := strings.TrimSpace(line[9:])
+	return parseMovementRest(rest, date)
+}
+
 // parseCardMovement parses a single card movement line
-// Format: DD-MM-YY [*|K] REFERENCE [XX/YY] COMPROBANTE [ARS] [USD]
+// Format: DD-MM-YY [*|K|F|E] REFERENCE [XX/YY] COMPROBANTE [ARS] [USD]
 func parseCardMovement(line string) (*PDFMovement, error) {
 	line = strings.TrimSpace(line)
 
@@ -296,14 +361,17 @@ func parseCardMovement(line string) (*PDFMovement, error) {
 		return nil, nil
 	}
 
-	// Remove date and space
+	// Remove date and space, then skip flag character (*, K, F, E)
 	rest := strings.TrimSpace(line[9:])
-
-	// Remove flag (* or K)
-	if len(rest) > 0 && (rest[0] == '*' || rest[0] == 'K') {
+	if len(rest) > 0 {
 		rest = strings.TrimSpace(rest[1:])
 	}
 
+	return parseMovementRest(rest, date)
+}
+
+// parseMovementRest parses the part of the movement line after date (and optional flag)
+func parseMovementRest(rest string, date time.Time) (*PDFMovement, error) {
 	// Find comprobante (6-digit number)
 	comprobanteMatch := comprobanteRegex.FindString(rest)
 	if comprobanteMatch == "" {
@@ -319,12 +387,25 @@ func parseCardMovement(line string) (*PDFMovement, error) {
 	var arsAmount, usdAmount decimal.Decimal
 	amounts := extractAmounts(afterComprobante)
 
+	// If no amounts after comprobante, try extracting from before (comprobante was appended from next line)
+	if len(amounts) == 0 {
+		amounts = extractAmounts(beforeComprobante)
+		if len(amounts) > 0 {
+			// Remove the amount from beforeComprobante so it doesn't end up in the detail
+			lastAmt := amounts[len(amounts)-1]
+			beforeComprobante = strings.TrimSuffix(strings.TrimSpace(beforeComprobante), lastAmt)
+			beforeComprobante = strings.TrimSpace(beforeComprobante)
+			amounts = amounts[len(amounts)-1:] // keep only the last amount
+		}
+	}
+
 	if len(amounts) == 2 {
 		arsAmount, _ = parseGaliciaAmount(amounts[0])
 		usdAmount, _ = parseGaliciaAmount(amounts[1])
 	} else if len(amounts) == 1 {
-		// Determine if it's ARS or USD based on the reference (contains "USD"?)
-		if strings.Contains(beforeComprobante, "USD") {
+		// Determine if it's ARS or USD/EUR based on the reference
+		// Consumos in USD or EUR are reported in USD in the statement
+		if strings.Contains(beforeComprobante, "USD") || strings.Contains(beforeComprobante, "EUR") {
 			usdAmount, _ = parseGaliciaAmount(amounts[0])
 			arsAmount = decimal.Zero
 		} else {
