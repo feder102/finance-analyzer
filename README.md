@@ -27,8 +27,6 @@ go install github.com/Alechan/finance-analyzer/pkg/cmd/pdf2csv@latest
 
 If `pdf2csv` is not on your `PATH`, run it from your Go bin directory instead. On many setups that is `$(go env GOPATH)/bin`.
 
-The older `pdfcardssummarycli` command is still available as a compatibility alias, but `pdf2csv` is the preferred name.
-
 ## How do I extract a PDF?
 
 From the folder that already contains your PDFs:
