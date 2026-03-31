@@ -985,6 +985,19 @@ test("empty workspace overlay offers load, import, and demo reset actions", asyn
   assert.match(source, /label:\s*"Reload demo data"/);
 });
 
+test("blocking startup overlay offers demo reset only for recoverable data\/config errors", async () => {
+  const source = await fs.readFile(
+    path.join(WEB_ROOT, "mockups_lab", "shared", "finance-overview.js"),
+    "utf8"
+  );
+
+  assert.match(source, /function isRecoverableDataConfigError\(message\)/);
+  assert.match(source, /Failed to fetch dynamically imported module\|Cannot find module\|Unexpected token\|ReferenceError\|TypeError/);
+  assert.match(source, /error parsing csv\|could not be fetched\|could not be loaded\|could not be validated/);
+  assert.match(source, /var actions = isRecoverableDataConfigError\(message\)/);
+  assert.match(source, /label:\s*"Reload demo data"/);
+});
+
 test("finance-overview wires storage telemetry and fallback banner hooks in integrated mockup", async () => {
   const source = await fs.readFile(
     path.join(WEB_ROOT, "mockups_lab", "shared", "finance-overview.js"),

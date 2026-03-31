@@ -556,6 +556,24 @@
     document.body.appendChild(overlay);
   }
 
+  function clickLoadDemoButton() {
+    var button = document.getElementById("fo-load-demo-btn");
+    if (button && typeof button.click === "function") {
+      button.click();
+    }
+  }
+
+  function isRecoverableDataConfigError(message) {
+    var text = String(message || "");
+    if (!text) {
+      return false;
+    }
+    if (/Failed to fetch dynamically imported module|Cannot find module|Unexpected token|ReferenceError|TypeError/i.test(text)) {
+      return false;
+    }
+    return /(error parsing csv|could not be fetched|could not be loaded|could not be validated|tmp_(public|sensitive)_data|demo_extracted\.csv|owner_map\.csv|details_to_categories_map\.csv|category_segments_map\.csv|joined\.csv)/i.test(text);
+  }
+
   function showBlockingError(message) {
     var requiredFiles = Array.isArray(activeBootConfig && activeBootConfig.requiredFiles)
       ? activeBootConfig.requiredFiles
@@ -564,11 +582,23 @@
       requiredFiles && requiredFiles.length
         ? requiredFiles.join(", ")
         : "tmp_public_data/current/demo_extracted.csv, tmp_public_data/current/owner_map.csv, tmp_public_data/current/details_to_categories_map.csv, tmp_public_data/current/category_segments_map.csv";
-    showBlockingOverlay("Blocking startup error", [
-      "Required data/config files could not be loaded or validated.",
-      String(message || "Unknown error"),
-      "Expected files for active load profile: " + expectedFilesText
-    ]);
+    var actions = isRecoverableDataConfigError(message)
+      ? [
+          {
+            label: "Reload demo data",
+            onClick: clickLoadDemoButton
+          }
+        ]
+      : [];
+    showBlockingOverlay(
+      "Blocking startup error",
+      [
+        "Required data/config files could not be loaded or validated.",
+        String(message || "Unknown error"),
+        "Expected files for active load profile: " + expectedFilesText
+      ],
+      actions
+    );
   }
 
   function showEmptyWorkspaceOverlay() {
@@ -598,12 +628,7 @@
         },
         {
           label: "Reload demo data",
-          onClick: function () {
-            var button = document.getElementById("fo-load-demo-btn");
-            if (button && typeof button.click === "function") {
-              button.click();
-            }
-          }
+          onClick: clickLoadDemoButton
         }
       ]
     );
