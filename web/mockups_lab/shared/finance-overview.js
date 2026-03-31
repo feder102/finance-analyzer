@@ -575,7 +575,6 @@
     showBlockingOverlay(
       "No CSV files loaded",
       [
-        "This is a clean start state. The app should not keep showing stale computed data.",
         "Load CSV(s) or import a workspace to continue."
       ],
       [
