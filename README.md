@@ -11,11 +11,12 @@ You can:
 
 ## Which statements are supported?
 
-The CLI currently supports only:
+The CLI currently supports:
 1. `Santander`
 2. `Visa Prisma`
+3. `Galicia` (Visa credit card statements)
 
-Both have been tested in a separate private repo with *~50 PDFs each*. If your PDFs come from a different bank, this repo will not parse them correctly without code changes.
+Santander and Visa Prisma have been tested in a separate private repo with *~50 PDFs each*. Galicia support is newer and has been tested with fewer samples. If your PDFs come from a different bank, this repo will not parse them correctly without code changes.
 
 ## How do I install the CLI?
 
@@ -75,6 +76,27 @@ ls -1
 ```
 
 The CLI writes one `.csv` next to each input PDF. When you pass `--join-csvs`, it also writes the combined file you requested.
+
+### Galicia
+
+```bash
+ls -1
+# galicia_visa_feb2026.pdf
+
+finpdf2csv --bank galicia galicia_visa_feb2026.pdf
+
+ls -1
+# galicia_visa_feb2026.pdf
+# galicia_visa_feb2026.pdf.csv
+```
+
+Multiple Galicia statements combined:
+
+```bash
+finpdf2csv --bank galicia --join-csvs COMBINED.csv \
+  galicia_visa_ene2026.pdf \
+  galicia_visa_feb2026.pdf
+```
 
 ## How do I use the website?
 
